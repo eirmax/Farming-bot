@@ -2,16 +2,15 @@ from javascript import require, On, Once, AsyncTask, once, off
 from simple_chalk import chalk
 from utils_p.vec3_conversion import vec3_to_str
 
-# Requires ./utils_p/vec3_conversion.py
+# Requires ./utils/vec3_to_str.py
 
 # Import the javascript libraries
 mineflayer = require("mineflayer")
-mineflayer_pathfinder = require("mineflayer-pathfinder")
 vec3 = require("vec3")
 
 # Global bot parameters
 server_host = "localhost"
-server_port = 64809
+server_port = 3000
 reconnect = True
 
 
@@ -32,24 +31,27 @@ class MCBot:
     def log(self, message):
         print(f"[{self.bot.username}] {message}")
 
-    # Mineflayer: Pathfind to goal
-    def pathfind_to_goal(self, goal_location):
-        try:
-            self.bot.pathfinder.setGoal(
-                mineflayer_pathfinder.pathfinder.goals.GoalNear(
-                    goal_location["x"], goal_location["y"], goal_location["z"], 1
-                )
-            )
-
-        except Exception as e:
-            self.log(f"Error while trying to run pathfind_to_goal: {e}")
-
     # Start mineflayer bot
     def start_bot(self):
         self.bot = mineflayer.createBot(self.bot_args)
-        self.bot.loadPlugin(mineflayer_pathfinder.pathfinder)
 
         self.start_events()
+
+    # Mineflayer: Run and jump
+    def run_and_jump(self):
+        try:
+
+            @AsyncTask(start=True)
+            def async_run_and_jump(task):
+                self.bot.setControlState("forward", True)
+                self.bot.waitForTicks(1)
+                self.bot.setControlState("sprint", True)
+                self.bot.setControlState("jump", True)
+                self.bot.waitForTicks(11)
+                self.bot.clearControlStates()
+
+        except Exception as e:
+            bot.chat(f"Error while trying to run run_and_jump: {e}")
 
     # Attach mineflayer events to bot
     def start_events(self):
@@ -69,7 +71,7 @@ class MCBot:
         # Spawn event: Triggers on bot entity spawn
         @On(self.bot, "spawn")
         def spawn(this):
-            self.bot.chat("Bot logged")
+            self.bot.chat("Hi!")
 
         # Kicked event: Triggers on kick from server
         @On(self.bot, "kicked")
@@ -85,7 +87,7 @@ class MCBot:
                     self.bot.chat("Goodbye!")
                     self.reconnect = False
                     this.quit()
-                elif "come to me" in message:
+                elif "look at me" in message:
 
                     # Find all nearby players
                     local_players = self.bot.players
@@ -101,12 +103,9 @@ class MCBot:
 
                     # Feedback
                     if player_location:
-                        self.log(
-                            chalk.magenta(
-                                f"Pathfinding to player at {vec3_to_str(player_location)}"
-                            )
-                        )
-                        self.pathfind_to_goal(player_location)
+                        self.log(chalk.magenta(vec3_to_str(player_location)))
+                        self.bot.lookAt(player_location)
+                        self.run_and_jump()
                     else:
                         self.log(f"Player not found.")
 
@@ -131,4 +130,4 @@ class MCBot:
 
 
 # Run function that starts the bot(s)
-bot = MCBot("pathfinder-bot")
+bot = MCBot("jumper-bot")

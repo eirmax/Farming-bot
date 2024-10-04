@@ -11,7 +11,7 @@ vec3 = require("vec3")
 
 # Global bot parameters
 server_host = "localhost"
-server_port = 50674
+server_port = 64809
 reconnect = True
 
 
@@ -67,7 +67,7 @@ class MCBot:
         # Spawn event: Triggers on bot entity spawn
         @On(self.bot, "spawn")
         def spawn(this):
-            self.bot.chat("Hi!")
+            self.bot.chat("Bot logged!")
 
         # Kicked event: Triggers on kick from server
         @On(self.bot, "kicked")
@@ -80,7 +80,7 @@ class MCBot:
         def messagestr(this, message, messagePosition, jsonMsg, sender, verified=None):
             if messagePosition == "chat":
                 # Обработка команды "move to"
-                if message.startswith("move to"):
+                if message.startswith("move"):
                     coords = message.split(" ")
                     if len(coords) == 4:  # Ожидаем "move to x y z"
                         try:
@@ -103,6 +103,7 @@ class MCBot:
                 elif "come to me" in message:
                     # Find all nearby players
                     local_players = self.bot.players
+                    player_location = None
 
                     # Search for our specific player
                     for el in local_players:
