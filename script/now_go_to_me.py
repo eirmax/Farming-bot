@@ -2,15 +2,16 @@ from javascript import require, On, Once, AsyncTask, once, off
 from simple_chalk import chalk
 from utils_p.vec3_conversion import vec3_to_str
 
-# Requires ./utils/vec3_to_str.py
+# Requires ./utils/vec3_conversion.py
 
 # Import the javascript libraries
 mineflayer = require("mineflayer")
+mineflayer_pathfinder = require("mineflayer-pathfinder")
 vec3 = require("vec3")
 
 # Global bot parameters
 server_host = "localhost"
-server_port = 3000
+server_port = 50450
 reconnect = True
 
 
@@ -31,28 +32,30 @@ class MCBot:
     def log(self, message):
         print(f"[{self.bot.username}] {message}")
 
+    def pathfind_to_goal(self, player_location):
+        try:
+            while self.reconnect:
+                self.bot.pathfinder.setGoal(
+                    mineflayer_pathfinder.pathfinder.goals.GoalNear(
+                        player_location["x"], player_location["y"], player_location["z"], 1
+                    )
+                )
+                self.bot.once("goal_reached", lambda: None)
+                self.bot.once("path_update", lambda: None)
+                self.bot.once("path_end", lambda: None)
+                self.bot.once("path_error", lambda: None)
+
+        except Exception as e:
+            self.log(f"Error while trying to run pathfind_to_goal: {e}")
     # Start mineflayer bot
     def start_bot(self):
         self.bot = mineflayer.createBot(self.bot_args)
+        self.bot.loadPlugin(mineflayer_pathfinder.pathfinder)
+
+        # Set maximum number of listeners to a higher value
+        self.bot.setMaxListeners(20)
 
         self.start_events()
-
-    # Mineflayer: Run and jump
-    def run_and_jump(self):
-        try:
-
-            @AsyncTask(start=True)
-            def async_run_and_jump(task):
-                self.bot.setControlState("forward", True)
-                self.bot.waitForTicks(1)
-                self.bot.setControlState("sprint", True)
-                self.bot.setControlState("jump", True)
-                self.bot.waitForTicks(11)
-                self.bot.clearControlStates()
-
-        except Exception as e:
-            bot.chat(f"Error while trying to run run_and_jump: {e}")
-
     # Attach mineflayer events to bot
     def start_events(self):
 
@@ -87,7 +90,7 @@ class MCBot:
                     self.bot.chat("Goodbye!")
                     self.reconnect = False
                     this.quit()
-                elif "look at me" in message:
+                elif "come to me" in message:
 
                     # Find all nearby players
                     local_players = self.bot.players
@@ -103,9 +106,12 @@ class MCBot:
 
                     # Feedback
                     if player_location:
-                        self.log(chalk.magenta(vec3_to_str(player_location)))
-                        self.bot.lookAt(player_location)
-                        self.run_and_jump()
+                        self.log(
+                            chalk.magenta(
+                                f"Pathfinding to player at {vec3_to_str(player_location)}"
+                            )
+                        )
+                        self.pathfind_to_goal(player_location)
                     else:
                         self.log(f"Player not found.")
 
@@ -130,4 +136,4 @@ class MCBot:
 
 
 # Run function that starts the bot(s)
-bot = MCBot("jumper-bot")
+bot = MCBot("pathfinder-bot")

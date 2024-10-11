@@ -11,7 +11,7 @@ vec3 = require("vec3")
 
 # Global bot parameters
 server_host = "localhost"
-server_port = 64809
+server_port = 50450
 reconnect = True
 
 
@@ -32,7 +32,7 @@ class MCBot:
     def log(self, message):
         print(f"[{self.bot.username}] {message}")
 
-    # Mineflayer: Pathfind to goal
+
     def pathfind_to_goal(self, goal_location):
         try:
             self.bot.pathfinder.setGoal(
@@ -76,6 +76,7 @@ class MCBot:
                 self.log(chalk.redBright(f"Kicked whilst trying to connect: {reason}"))
 
         # Chat event: Triggers on chat message
+
         @On(self.bot, "messagestr")
         def messagestr(this, message, messagePosition, jsonMsg, sender, verified=None):
             if messagePosition == "chat":
@@ -90,41 +91,29 @@ class MCBot:
                             goal_location = {"x": x, "y": y, "z": z}
                             self.log(chalk.magenta(f"Pathfinding to coordinates {goal_location}"))
                             self.pathfind_to_goal(goal_location)
+
+                            # Move the bot to the specified coordinates
+                            self.bot.setControlState("forward", False)
+                            self.bot.setControlState("back", False)
+                            self.bot.setControlState("left", False)
+                            self.bot.setControlState("right", False)
+                            self.bot.setControlState("jump", False)
+                            self.bot.setControlState("sprint", False)
+                            self.bot.setControlState("dig", False)
+                            self.bot.setControlState("place", False)
+                            self.bot.lookAt(x, y, z, True)  # Fixed: Added True
+                            self.bot.move(x, y, z)
                         except ValueError:
                             self.bot.chat("Invalid coordinates provided! Please use numbers.")
                     else:
                         self.bot.chat("Please provide exactly three coordinates: x, y, and z.")
 
-                # Обработка команды "quit"
-                elif "quit" in message:
-                    self.bot.chat("Goodbye!")
-                    self.reconnect = False
-                    this.quit()
+                # Обработка команды "come to me"
                 elif "come to me" in message:
-                    # Find all nearby players
-                    local_players = self.bot.players
-                    player_location = None
-
-                    # Search for our specific player
-                    for el in local_players:
-                        player_data = local_players[el]
-                        if player_data["uuid"] == sender:
-                            vec3_temp = local_players[el].entity.position
-                            player_location = vec3(
-                                vec3_temp["x"], vec3_temp["y"] + 1, vec3_temp["z"]
-                            )
-
-                    # Feedback
-                    if player_location:
-                        self.log(
-                            chalk.magenta(
-                                f"Pathfinding to player at {vec3_to_str(player_location)}"
-                            )
-                        )
-                        self.pathfind_to_goal(player_location)
-                    else:
-                        self.log(f"Player not found.")
-
+                    # ...
+                    player_location = self.bot.entity.position  # Assuming self.bot.entity.position exists
+                    self.bot.lookAt(player_location.x, player_location.y, player_location.z, True)  # Fixed: Added True
+                    self.bot.move(player_location.x, player_location.y, player_location.z)
         # End event: Triggers on disconnect from server
         @On(self.bot, "end")
         def end(this, reason):

@@ -11,7 +11,7 @@ vec3 = require("vec3")
 
 # Global bot parameters
 server_host = "localhost"
-server_port = 64809
+server_port = 50450
 reconnect = True
 
 
@@ -69,7 +69,7 @@ class MCBot:
         # Spawn event: Triggers on bot entity spawn
         @On(self.bot, "spawn")
         def spawn(this):
-            self.bot.chat("Bot logged")
+            self.bot.chat("Bot logge")
 
         # Kicked event: Triggers on kick from server
         @On(self.bot, "kicked")
